@@ -5,7 +5,7 @@ class TestSessionAPI(unittest.TestCase):
 
     def setUp(self):
         # Set the server URL before each test
-        set_server_url("http://128.55.64.33:8000")
+        set_server_url("http://0.0.0.0:8000")
         self.session_data = SessionData(
             source_model_id=2001,
             destination_model_id=2005,

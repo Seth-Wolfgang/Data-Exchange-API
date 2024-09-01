@@ -48,21 +48,35 @@ def set_session_id(ids: List[int]):
 
 
 def start_session(sd: SessionData):
+
+    """
+    Start a new session with the provided session data.
+    
+    Parameters:
+        sd (SessionData): Data class object containing session details.
+        
+    Returns:
+        Session: Session object representing the new session.
+    """
+
     if not SERVER_URL_SET:
         print("Error: Server URL not set. Please set a valid server URL before starting a session.")
         return
-
-    create_session(SERVER_URL, sd.source_model_id, sd.destination_model_id,
+    
+    # Start a new session with the provided session data
+    session = Session(SERVER_URL, sd.source_model_id, sd.destination_model_id,
                 sd.initiator_id, sd.invitee_id, sd.input_variables_id, sd.input_variables_size,
                 sd.output_variables_id, sd.output_variables_size)
+    
+    return session 
 
-def retrieve_session_status(session_id):
+def retrieve_session_status(session: Session):
     if not SERVER_URL_SET:
         print("Error: Server URL not set. Please set a valid server URL before joining a session.")
         return
     
-    session_id = ','.join(map(str, session_id))
-    return(get_session_status(SERVER_URL, session_id))
+    session_id = ','.join(map(str, session.get_session_id()))
+    return(session.get_session_status(SERVER_URL, session_id))
 
 def join_session_with_retries(session_id, invitee_id, max_retries, retry_delay):
     retries = 0

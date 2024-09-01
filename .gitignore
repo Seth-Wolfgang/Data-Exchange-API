@@ -7,6 +7,7 @@
 *.o
 *.so
 *.mod
+__pycache__/
 
 # Packages #
 ############
