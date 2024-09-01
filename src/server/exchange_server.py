@@ -1,11 +1,15 @@
+from re import L
 from fastapi import FastAPI, HTTPException, Request, Response, Header
 from pydantic import BaseModel
 from typing import List, Optional
+from sys import argv
+
 import uvicorn
 import struct
 import threading
 import asyncio
 import warnings
+
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 app = FastAPI()
@@ -237,12 +241,26 @@ async def end_session(data: EndSessionData):
             return {"status": "Session ended successfully", "session_id": session_id}
         
 if __name__ == '__main__':
-    def main():
-        # Task to print sessions periodically
-        loop = asyncio.get_event_loop()
-        loop.create_task(print_sessions_every_n_seconds())
-        
-        # Start the server with Uvicorn
-        uvicorn.run(app, host='0.0.0.0', port=8000)
+    # Task to print sessions periodically
+    loop = asyncio.get_event_loop()
+    loop.create_task(print_sessions_every_n_seconds())
 
-    main()
+    host_ip = "127.0.0.1"
+    host_port = 8000
+
+    # If this is run as main, check for command line arguments
+    match len(argv):
+        case 0:
+            pass
+        case 1:
+            host_ip = argv[0]
+        case 2:
+            host_ip = argv[0]
+            host_port = int(argv[1])
+        case _:
+            print("Usage: python exchange_server.py [host_ip - optional. Default = localhost] [host_port - optional. Default = 8000]")
+
+    # Start the server with Uvicorn
+    uvicorn.run(app, host=host_ip, port=host_port)
+
+

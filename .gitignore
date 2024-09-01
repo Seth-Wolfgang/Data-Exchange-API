@@ -8,6 +8,8 @@
 *.so
 *.mod
 __pycache__/
+.pytest_cache/
+build/**
 
 # Packages #
 ############
@@ -37,3 +39,4 @@ __pycache__/
 .Trashes
 ehthumbs.db
 Thumbs.db
+.vscode/**
