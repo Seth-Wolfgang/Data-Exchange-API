@@ -24,6 +24,10 @@ class SessionData(BaseModel):
 class JoinSessionData(BaseModel):
     session_id: str
     invitee_id: int
+    
+class EndSessionData(BaseModel):
+    session_id: str
+    user_id: int
 
 # Shared resource: sessions dictionary and a lock to manage concurrent access
 sessions = {}
@@ -203,9 +207,6 @@ async def receive_data(session_id: str, var_id: int):
         else:
             raise HTTPException(status_code=404, detail="Session or variable not found")
 
-class EndSessionData(BaseModel):
-    session_id: str
-    user_id: int
 
 @app.post("/end_session")
 async def end_session(data: EndSessionData):
@@ -243,6 +244,6 @@ if __name__ == '__main__':
         loop.create_task(print_sessions_every_n_seconds())
         
         # Start the server with Uvicorn
-        uvicorn.run(app, host='0.0.0.0', port=8000)
+        uvicorn.run(app, host='127.0.0.1', port=8000)
 
     main()
