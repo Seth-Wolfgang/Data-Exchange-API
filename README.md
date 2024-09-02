@@ -10,7 +10,18 @@ To set up the E3SM Client, ensure the following requirements are met:
 - **Gfortran version:** GNU Fortran 12.3.0
 - **Standard C libraries:** `stdio.h`, `stdlib.h`, `string.h`
 
-## Installation for E3SM Client
+## CMake Installation for E3SM Client
+
+```bash
+git clone https://github.com/Seth-Wolfgang/Data-Exchange-Service-for-Computational-Model-Integrations-between-different-platforms.git
+cd Data-Exchange-Service-for-Computational-Model-Integrations-between-different-platforms
+mkdir build
+cd build 
+cmake ..
+make -j 8
+```
+
+## Manual Installation for E3SM Client
 
 1. Install the `libcurl` library required for the C wrapper code (`http_impl.c`):
    ```bash
@@ -31,6 +42,21 @@ To set up the E3SM Client, ensure the following requirements are met:
    ```
    curl --version
    ```
+
+
+## Installation with [Poetry](https://python-poetry.org/) - Installs Cyberwater Client and Data Exchange Server
+
+1. (Optional) Create a virtual environment with Poetry
+
+```bash
+cd Data-Exchange-Service-for-Computational-Model-Integrations-between-different-platforms
+poetry shell
+```
+2. Install dependencies and build project
+```bash
+poetry install && poetry build
+```
+
 ## Data Exchange Service Requirements
 
 Ensure the following requirements are met for the Data Exchange Service:

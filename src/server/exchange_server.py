@@ -247,19 +247,18 @@ if __name__ == '__main__':
 
     host_ip = "127.0.0.1"
     host_port = 8000
-
     # If this is run as main, check for command line arguments
     match len(argv):
-        case 0:
-            pass
         case 1:
-            host_ip = argv[0]
+            pass
         case 2:
-            host_ip = argv[0]
-            host_port = int(argv[1])
+            host_ip = argv[1]
+        case 3:
+            host_ip = argv[1]
+            host_port = int(argv[2])
         case _:
             print("Usage: python exchange_server.py [host_ip - optional. Default = localhost] [host_port - optional. Default = 8000]")
-
+    print(f"Starting server at {host_ip}:{host_port}")
     # Start the server with Uvicorn
     uvicorn.run(app, host=host_ip, port=host_port)
 

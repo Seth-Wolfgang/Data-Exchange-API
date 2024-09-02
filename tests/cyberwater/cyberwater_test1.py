@@ -1,5 +1,6 @@
 import unittest
-from ..cyberwater..ex0..tests..src.clients.cyberwater import high_level_api 
+# from src.clients.cyberwater.high_level_api import * 
+from ModelDataExchange.clients.cyberwater.high_level_api import set_server_url, start_session, SessionData 
 
 class TestSessionAPI(unittest.TestCase):
 
@@ -37,5 +38,5 @@ class TestSessionAPI(unittest.TestCase):
             start_session(self.session_data)
         self.assertIn("invalid input", str(context.exception.lower()))
 
-# if __name__ == "__main__":
-#     unittest.main()
+if __name__ == "__main__":
+    unittest.main()

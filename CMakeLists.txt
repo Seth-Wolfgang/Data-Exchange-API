@@ -2,11 +2,9 @@
 cmake_minimum_required(VERSION 3.0)
 project(DataExchangeServer LANGUAGES C Fortran) # C and fortran 
 
+# Required for e3sm C code
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
-
-include(FortranCInterface)
-FortranCInterface_VERIFY()
 
 # Function to make fortran modules easy to link
 # Source: https://stackoverflow.com/questions/54549959/how-to-fix-cmake-fortran-modules-dependency
