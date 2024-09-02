@@ -10,7 +10,7 @@ To set up the E3SM Client, ensure the following requirements are met:
 - **Gfortran version:** GNU Fortran 12.3.0
 - **Standard C libraries:** `stdio.h`, `stdlib.h`, `string.h`
 
-## CMake Installation for E3SM Client
+## CMake Installation for E3SM Client (Recommended)
 
 ```bash
 git clone https://github.com/Seth-Wolfgang/Data-Exchange-Service-for-Computational-Model-Integrations-between-different-platforms.git
@@ -44,7 +44,7 @@ make -j 8
    ```
 
 
-## Installation with [Poetry](https://python-poetry.org/) - Installs Cyberwater Client and Data Exchange Server
+## Installation with [Poetry](https://python-poetry.org/) - (Recommended)
 
 1. (Optional) Create a virtual environment with Poetry
 
@@ -73,10 +73,11 @@ Ensure the following requirements are met for the Data Exchange Service:
    python3 -m venv exchange_env
    source exchange_env/bin/activate
    ```
-2. Install the necessary Python libraries as specified:
-  ```bash
-  pip install fastapi==0.110.1 uvicorn==0.29.0 pydantic==2.7.0
-  ```
+2. Install project
+   ```bash
+   cd Data-Exchange-Service-for-Computational-Model-Integrations-between-different-platforms
+   pip install .
+   ```
 ## Cyberwater Client Requirements
 
 The Cyberwater client requires the same Python version as the Data Exchange Service:
@@ -89,7 +90,7 @@ To validate the functionality of the data exchange system, you need to test the 
 
 ## Testing the Data Exchange Server
 
-Navigate to the directory containing `exchange_server.py`. Start the server by running the following command:
+Navigate to the directory containing `exchange_server.py` (`./src/server`). Start the server by running the following command:
 
 ```bash
   python exchange_server.py
@@ -97,6 +98,9 @@ Navigate to the directory containing `exchange_server.py`. Start the server by r
 This will start the server on your local machine, listening on port 8000. (default, you can change it according to the client requirements).
 
 ## Testing the Cyberwater Client
+
+> if you installed the library, ignore the instructions below and run the test files in ./tests/cyberwater
+
 Perform the following steps on the remote machine set up as the Cyberwater client:
 1. Check and ensure that cyberwater_library.py and cyberwater_test.py are in the current directory.
 2. Verify that the server_url and port variables in cyberwater_test.py match the server's address and port.
@@ -106,12 +110,27 @@ Perform the following steps on the remote machine set up as the Cyberwater clien
 
 To run the Cyberwater client, execute:
 ```bash
-python cyberwater_test.py
+python cyberwater_test1.py
+python cyberwater_test2.py
+python cyberwater_test3.py
 ```
-
 This will initiate or join a session and start the data exchange process.
 
-## Testing the E3SM Client
+## Testing the E3SM Client After CMake Build
+Follow these steps on a different remote machine intended as the E3SM client:
+1. Build using instructions above for building with CMake
+2. Go to build then tests directory
+   ```bash
+   cd build/tests
+   ```
+3. Run test files
+   ```bash
+   ./e3sm_test1
+   ./e3sm_test2
+   ./e3sm_test3
+   ```
+
+## Testing the E3SM Client After Manual Build
 Follow these steps on a different remote machine intended as the E3SM client:
 
 1. Ensure the `data_exchange_lib` directory contains `http_impl.c`, `http_interface.f90`, and `data_exchange.f90`.
