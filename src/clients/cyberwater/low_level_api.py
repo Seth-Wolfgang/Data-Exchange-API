@@ -38,18 +38,17 @@ def create_session(server_url, source_model_ID, destination_model_ID, initiator_
         "output_variables_size": output_variables_size or []
     }
 
-
     # Send POST request to the server
     response = requests.post(f"{server_url}/create_session", json=data, verify=False)
-    
     # Check response status
     if response.ok:
         session_info = response.json()
         print(f"Session status: {session_info.get('status', 'unknown')}. Session ID: {session_info.get('session_id', 'N/A')}")
+        print(session_info)
         return session_info
     else:
-        print("Error occurred:", response.text)
-        return {"error": response.text}
+        print("Error occurred. Invalid input:", response.text)
+        raise Exception(f"Error occurred. Invalid input: {response.text}") 
 
 def get_session_status(server_url, session_id):
     """

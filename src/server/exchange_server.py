@@ -1,4 +1,3 @@
-from re import L
 from fastapi import FastAPI, HTTPException, Request, Response, Header
 from pydantic import BaseModel
 from typing import List, Optional
@@ -67,7 +66,7 @@ async def create_session(session_data: SessionData):
         while session_id in sessions:
             i += 1
             session_id = f"{base_session_id},{i}"
-
+        print(f"Creating session with ID: {session_id}")
         # Map variable IDs to their respective sizes
         var_sizes = {**dict(zip(session_data.input_variables_ID, session_data.input_variables_size)),
                      **dict(zip(session_data.output_variables_ID, session_data.output_variables_size))}

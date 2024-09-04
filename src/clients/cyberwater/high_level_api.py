@@ -1,8 +1,7 @@
-import ctypes
 from dataclasses import dataclass
 import numpy as np
 import time
-from typing import List
+from typing import List, Union
 
 # Assuming there is an external module named http_interface that provides required HTTP functionalities
 from .low_level_api import *
@@ -11,7 +10,6 @@ from .low_level_api import *
 SERVER_URL = ""
 SESSION_ID = [0]*5
 SERVER_URL_SET = False
-
 
 @dataclass
 class SessionData:
@@ -33,9 +31,10 @@ def set_server_url(url: str):
     if url.strip():
         SERVER_URL = url.strip()
         SERVER_URL_SET = True
+        print(f"\033[31m Set as true {url.strip()} \033[0m")
     else:
-        print("Error: Invalid server URL provided.")
         SERVER_URL_SET = False
+        raise Exception("Error: Invalid server URL provided.")
 
 def set_session_id(ids: List[int]):
     global SESSION_ID
@@ -47,12 +46,12 @@ def set_session_id(ids: List[int]):
         print("Error: Invalid session ID array size.")
 
 
-def start_session(sd: SessionData):
+def start_session(sd: SessionData) -> Union[dict, None]:
     if not SERVER_URL_SET:
         print("Error: Server URL not set. Please set a valid server URL before starting a session.")
         return
 
-    create_session(SERVER_URL, sd.source_model_id, sd.destination_model_id,
+    return create_session(SERVER_URL, sd.source_model_id, sd.destination_model_id,
                 sd.initiator_id, sd.invitee_id, sd.input_variables_id, sd.input_variables_size,
                 sd.output_variables_id, sd.output_variables_size)
 
