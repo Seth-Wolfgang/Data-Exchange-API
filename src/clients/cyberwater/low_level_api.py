@@ -1,51 +1,64 @@
+import uuid
 import requests
 import struct
-import time 
-import os
-import ssl
+
+from typing import Union
+from data_classes import JoinSessionData, SessionData, SessionID, SessionStatus
 
 cert_path = "/global/homes/a/amlodha/Final_Data_Exchange_Service_Code1/src/clients/cyberwater/lib/ssl-cert-snakeoil.pem"
 
-def create_session(server_url, source_model_ID, destination_model_ID, initiator_id, invitee_id,
-                   input_variables_ID=None, input_variables_size=None,
-                   output_variables_ID=None, output_variables_size=None):
+
+
+def create_session(server_url, source_model_id, destination_model_id, initiator_id, invitee_id,
+                   input_variables_id=None, input_variables_size=None,
+                   output_variables_id=None, output_variables_size=None) -> SessionID:
     """
     Creates a session with specified parameters on the server.
 
     Parameters:
         server_url (str): The server URL.
-        source_model_ID (int): ID of the source model.
-        destination_model_ID (int): ID of the destination model.
+        source_model_id (int): ID of the source model.
+        destination_model_id (int): ID of the destination model.
         initiator_id (int): ID of the session initiator.
         inviter_id (int): ID of the inviter.
-        input_variables_ID (list): Optional list of input variable IDs.
+        input_variables_id (list): Optional list of input variable IDs.
         input_variables_size (list): Optional list of sizes for input variables.
-        output_variables_ID (list): Optional list of output variable IDs.
+        output_variables_id (list): Optional list of output variable IDs.
         output_variables_size (list): Optional list of sizes for output variables.
 
     Returns:
-        dict: JSON response from the server or an error message.
+        SessionID: BaseModel of JSON response from the server
     """
+
     # Prepare data for the POST request
-    data = {
-        "source_model_ID": source_model_ID,
-        "destination_model_ID": destination_model_ID,
-        "initiator_id": initiator_id,
-        "invitee_id": invitee_id,
-        "input_variables_ID": input_variables_ID or [],
-        "input_variables_size": input_variables_size or [],
-        "output_variables_ID": output_variables_ID or [],
-        "output_variables_size": output_variables_size or []
-    }
+    data: SessionData = SessionData(
+        source_model_id=source_model_id,
+        destination_model_id=destination_model_id,
+        initiator_id=initiator_id,
+        invitee_id=invitee_id,
+        input_variables_id=input_variables_id or [],
+        input_variables_size=input_variables_size or [],
+        output_variables_id=output_variables_id or [],
+        output_variables_size=output_variables_size or []
+    )
 
     # Send POST request to the server
-    response = requests.post(f"{server_url}/create_session", json=data, verify=False)
+    response = requests.post(f"{server_url}/create_session", json=data.model_dump(), verify=False)
+
     # Check response status
-    if response.ok:
-        session_info = response.json()
-        print(f"Session status: {session_info.get('status', 'unknown')}. Session ID: {session_info.get('session_id', 'N/A')}")
-        print(session_info)
-        return session_info
+    if response.ok and response.json().get('status') == 'created':
+        session_info: dict = response.json()
+        session_id = session_info.get('session_id')
+
+        print(f"Session status: {session_info.get('status', 'unknown')}. Session ID: {session_id}")
+
+        return SessionID(
+            source_model_id=source_model_id,
+            destination_model_id=destination_model_id,
+            initiator_id=initiator_id,
+            invitee_id=invitee_id,
+            client_id= str(f'{session_id["client_id"]}') # type: ignore
+        )
     else:
         print("Error occurred. Invalid input:", response.text)
         raise Exception(f"Error occurred. Invalid input: {response.text}") 
@@ -62,22 +75,23 @@ def get_session_status(server_url, session_id):
         The status of the session as an integer if successful, or None if an error occurs.
     """
     # Construct the URL for the GET request
-    url = f"{server_url}/get_session_status?session_id={session_id}"
+    url = f"{server_url}/get_session_status"
     
     # Send the GET request to the server
-    response = requests.get(url, verify=False)
+    response = requests.get(url, verify=False, json=session_id.model_dump())
     
     # Check the response status
     if response.ok:
         # Extract the session status from the JSON response
         session_status = response.json()
-        return session_status
+        # print(f"Session status: {SessionStatus[session_status]}")
+        return SessionStatus(session_status).name
     else:
         # Optionally handle different error codes distinctly if needed
-        print(f"Failed to retrieve session status. Server responded with: {response.status_code} - {response.text}")
-        return None
+        raise Exception(f"Failed to retrieve session status. Server responded with: {response.status_code} - {response.text}")
+        
 
-def join_session(server_url, session_id, invitee_id):
+def join_session(server_url, session_id: SessionID, invitee_id) -> dict:
     """
     Attempts to join a session with a given session ID and invitee ID.
     
@@ -89,10 +103,13 @@ def join_session(server_url, session_id, invitee_id):
     Returns:
         dict: A dictionary with 'success' status and 'error' message if applicable.
     """
-    data = {"invitee_id": invitee_id, "session_id": session_id}
+    data = JoinSessionData(
+        session_id=session_id,
+        invitee_id=invitee_id
+    )
 
     try:
-        response = requests.post(f"{server_url}/join_session", json=data, verify=False)
+        response = requests.post(f"{server_url}/join_session", json=data.model_dump(), verify=False)
         if response.ok:
             return {'success': True}
         else:
@@ -100,7 +117,7 @@ def join_session(server_url, session_id, invitee_id):
     except Exception as e:
         return {'success': False, 'error': str(e)}
 
-def get_variable_size(server_url, session_id, var_id):
+def get_variable_size(server_url, session_id, var_id) -> int:
     """
     Retrieves the size of a specific variable within a session from the server.
 
@@ -128,7 +145,7 @@ def get_variable_size(server_url, session_id, var_id):
         print("Error occurred while retrieving variable size:", response.text)
         return -1
     
-def send_data(server_url, session_id, var_id, data):
+def send_data(server_url, session_id, var_id, data) -> requests.Response:
     """
     Sends a list of double precision floats as binary data to the server for a specific session and variable.
 
@@ -151,12 +168,10 @@ def send_data(server_url, session_id, var_id, data):
     }
 
     # Send the binary data as a POST request to the server
-    response = requests.post(f"{server_url}/send_data", data=binary_data, headers=headers, verify=False)
-    
-    return response
+    return requests.post(f"{server_url}/send_data", data=binary_data, headers=headers, verify=False)
 
 
-def get_variable_flag(server_url, session_id, var_id):
+def get_variable_flag(server_url, session_id, var_id) -> Union[int, None]:
     """
     Retrieves the flag status for a specific variable within a session.
 
@@ -187,7 +202,7 @@ def get_variable_flag(server_url, session_id, var_id):
         return None
 
 
-def receive_data(server_url, session_id, var_id):
+def receive_data(server_url, session_id, var_id) -> Union[tuple[float], None]:
     """
     Receives binary data from the server for a given session and variable ID, assuming the data
     is a stream of double precision floats.
@@ -213,9 +228,10 @@ def receive_data(server_url, session_id, var_id):
         return unpacked_data
     else:
         print("Error retrieving data:", response.text)
+        raise Exception(f"Error retrieving data: {response.text}")
         return None
     
-def end_session(server_url, session_id, user_id):
+def end_session(server_url: str, session_id: SessionID) -> bool:
     """
     Ends a session on the server using a POST request with the session ID and user ID.
     
@@ -224,20 +240,16 @@ def end_session(server_url, session_id, user_id):
         session_id (str): The ID of the session to be ended.
         user_id (int): The ID of the user (initiator or invitee) ending the session.
     """
-    print(session_id)
-    # Prepare data payload for the POST request
-    data = {
-        "session_id": session_id,
-        "user_id": user_id
-    }
 
     # Send the POST request to end the session
-    response = requests.post(f"{server_url}/end_session", json=data, verify=False)
+    response = requests.post(f"{server_url}/end_session", json=session_id.model_dump(), verify=False)
 
     # Check if the request was successful
     if response.ok:
         # Print the status message from the response
         print(response.json().get("status", "No status message received."))
+        return True
     else:
         # Print an error message if the request failed
         print("Error ending session:", response.text)
+        return False

@@ -1,32 +1,17 @@
 from fastapi import FastAPI, HTTPException, Request, Response, Header
-from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 from sys import argv
+from ..data_classes import SessionData, JoinSessionData, SessionID, SessionStatus
 
 import uvicorn
 import struct
 import threading
 import asyncio
 import warnings
-
+import uuid
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 app = FastAPI()
-
-# Pydantic models to validate incoming data
-class SessionData(BaseModel):
-    source_model_ID: int
-    destination_model_ID: int
-    initiator_id: int
-    invitee_id: int
-    input_variables_ID: List[int] = []
-    input_variables_size: List[int] = []
-    output_variables_ID: List[int] = []
-    output_variables_size: List[int] = []
-
-class JoinSessionData(BaseModel):
-    session_id: str
-    invitee_id: int
 
 # Shared resource: sessions dictionary and a lock to manage concurrent access
 sessions = {}
@@ -60,23 +45,36 @@ async def print_sessions_every_n_seconds(n=10):
 async def create_session(session_data: SessionData):
     """ Create a new session with given parameters and store it in a global dictionary """
     with session_lock:
-        base_session_id = f"{session_data.source_model_ID},{session_data.destination_model_ID},{session_data.initiator_id},{session_data.invitee_id}"
-        session_id = base_session_id + ",1"
-        i = 1
-        while session_id in sessions:
-            i += 1
-            session_id = f"{base_session_id},{i}"
+        # base_session_id = f"{session_data.source_model_id},{session_data.destination_model_id},{session_data.initiator_id},{session_data.invitee_id}"
+        # session_id = base_session_id + ",1"
+        # i = 1
+        # while session_id in sessions:
+        #     i += 1
+        #     session_id = f"{base_session_id},{i}"
+        
+        # Generate a unique session ID
+        session_id = None
+        while session_id is None or session_id in sessions:
+            session_id = SessionID(
+                source_model_id=session_data.source_model_id,
+                destination_model_id=session_data.destination_model_id,
+                initiator_id=session_data.initiator_id,
+                invitee_id=session_data.invitee_id,
+                client_id=str(uuid.uuid4())
+            )
+
         print(f"Creating session with ID: {session_id}")
         # Map variable IDs to their respective sizes
-        var_sizes = {**dict(zip(session_data.input_variables_ID, session_data.input_variables_size)),
-                     **dict(zip(session_data.output_variables_ID, session_data.output_variables_size))}
+        var_sizes = {**dict(zip(session_data.input_variables_id, session_data.input_variables_size)),
+                     **dict(zip(session_data.output_variables_id, session_data.output_variables_size))}
         
         # Initialize session data
         sessions[session_id] = {
-            'status': 'created',
-            'data': {var: None for var in set(session_data.input_variables_ID) | set(session_data.output_variables_ID)},
-            'flags': {var: 0 for var in set(session_data.input_variables_ID) | set(session_data.output_variables_ID)},
-            'client_vars': {session_data.initiator_id: list(session_data.input_variables_ID)},
+            'status': SessionStatus.CREATED,
+            'data': {var: None for var in set(session_data.input_variables_id) | set(session_data.output_variables_id)},
+            'flags': {var: 0 for var in set(session_data.input_variables_id) | set(session_data.output_variables_id)},
+            'client_vars': {session_data.initiator_id: list(session_data.input_variables_id)},
+            'client_id': session_id.client_id,
             'end_requests': set(),
             'var_sizes': var_sizes
         }
@@ -84,7 +82,7 @@ async def create_session(session_data: SessionData):
         return {"status": "created", "session_id": session_id}
     
 @app.get("/get_session_status")
-async def get_session_status(session_id: str):
+async def get_session_status(session_id: SessionID) -> int:
     """
     Retrieves the status of a specific session.
 
@@ -92,26 +90,24 @@ async def get_session_status(session_id: str):
         session_id (str): The ID of the session.
 
     Returns:
-        The status of the session as an integer.
+        The status of the session as an int.
+
+        SessionStatus.UNKNOWN = 0
+        SessionStatus.CREATED = 1
+        SessionStatus.ACTIVE = 2
+        SessionStatus.PARTIAL_END = 3
+        SessionStatus.END = 4
     """
     with session_lock:  # Assuming session_lock is a threading lock for thread-safe operations
         # Check if the session exists
         if session_id not in sessions:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        # Map statuses to integers
-        status_mapping = {
-            "created": 1, # Session is created, when one client has created the session
-            "active": 2, # Session is active, when both the clients has joined coupling
-            "partial end": 3 # Session is partial end, when one client has ended the session
-        }
-
-        # Return the status of the session
-        session_status = sessions[session_id]['status']
-        return status_mapping.get(session_status, 0)  # Return 0 if status is unknown
+        # See data_classes.py for SessionStatus enum
+        return sessions[session_id]['status'].value
 
 @app.post("/join_session")
-async def join_session(data: JoinSessionData):
+async def join_session(data: JoinSessionData) -> dict:
     """ Allow a new client to join an existing session """
     with session_lock:
         session_id = data.session_id
@@ -206,38 +202,39 @@ async def receive_data(session_id: str, var_id: int):
         else:
             raise HTTPException(status_code=404, detail="Session or variable not found")
 
-class EndSessionData(BaseModel):
-    session_id: str
-    user_id: int
-
 @app.post("/end_session")
-async def end_session(data: EndSessionData):
+async def end_session(data: SessionID):
     with session_lock:
-        session_id = data.session_id
-        user_id = data.user_id  # Updated to use 'user_id'
 
-        if session_id not in sessions:
+        if data not in sessions:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        session = sessions[session_id]
-        if user_id not in session['client_vars']:
+        session = sessions[data]
+        if data.client_id not in session['client_id']:
             raise HTTPException(status_code=404, detail="User not part of the session")
 
-        session['end_requests'].add(user_id)
+        session['end_requests'].add(data.client_id)
 
         if len(session['end_requests']) < len(session['client_vars']):
-            session['status'] = 'partial end'
-            vars_to_clear = session['client_vars'][user_id]
+            session['status'] = SessionStatus.PARTIAL_END.name
+            print("SESSION: ", session)
+            print("DATA: ", data)
+            # if client_id belongs to initiator, end initiator, otherwise end invitee
+            if session["client_id"] == data.client_id:
+                vars_to_clear = session['client_vars'][data.initiator_id]
+            else:
+                vars_to_clear = session['client_vars'][data.invitee_id]
+            
             for var in vars_to_clear:
                 print ("Variable Clearing:", var)
                 if var in session['data']:
                     session['data'][var] = None
                     session['flags'][var] = 0
-            return {"status": "Partial session end for user " + str(user_id), "session_id": session_id}
+            return {"status": "Partial session end for user " + str(data.client_id), "session_id": data}
         else:
-            session['status'] = 'end'
-            del sessions[session_id]
-            return {"status": "Session ended successfully", "session_id": session_id}
+            session['status'] = SessionStatus.END.name
+            del sessions[data]
+            return {"status": SessionStatus.END.name, "session_id": data}
         
 if __name__ == '__main__':
     # Task to print sessions periodically

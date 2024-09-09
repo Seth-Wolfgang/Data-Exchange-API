@@ -31,6 +31,7 @@ build/**
 *.log
 *.sql
 *.sqlite
+*.coverage 
 
 # OS generated files #
 ######################
@@ -42,3 +43,32 @@ build/**
 ehthumbs.db
 Thumbs.db
 .vscode/**
+
+# Unit test / coverage reports #
+################################
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Environments #
+################
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
