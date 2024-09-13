@@ -1,4 +1,4 @@
-# Data Exchange Service for Computational Model Integrations between different platforms
+# Data Exchange API 
 
 This repository contains the codebase for a data exchange service designed to facilitate communication between the Earth System Model (E3SM) and the Cyberwater client. It also includes a Python-based middleman server to manage the data exchange.
 
