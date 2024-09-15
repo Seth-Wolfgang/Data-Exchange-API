@@ -1,4 +1,3 @@
-import uuid
 import requests
 import struct
 

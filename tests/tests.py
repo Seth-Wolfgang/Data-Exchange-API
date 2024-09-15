@@ -5,8 +5,7 @@ import threading
 import time
 import contextlib
 
-from data_classes import SessionStatus
-
+from ..src.data_classes import SessionStatus
 from ..src.clients.cyberwater.high_level_api import *
 from ..src.clients.cyberwater.low_level_api import *
 from ..src.server.exchange_server import app 

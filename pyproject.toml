@@ -10,9 +10,10 @@ authors = ["Seth Wolfgang <wolfgangseth@gmail.com>",
             "Fengguang Song"]
 readme = "README.md"
 
-packages = [{ include = "cyberwater" , from = "src/clients/", to = "ModelDataExchange/clients" },
-    { include = "server" , from = "src/", to = "ModelDataExchange/" },
-    { include = "tests", to = "ModelDataExchange/tests" }]
+packages = [{ include = "cyberwater" , from = "src/clients/", to = "./clients" },
+    { include = "server" , from = "src/", to = "./" },
+    { include = "data_classes.py", from="src/", to="./"},
+    { include = "tests", to = "./tests" }]
 
 [tool.poetry.dependencies]
 python     = ">=3.9.13.1"
