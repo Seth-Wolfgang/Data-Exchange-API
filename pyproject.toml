@@ -11,12 +11,12 @@ authors = ["Seth Wolfgang <wolfgangseth@gmail.com>",
 readme = "README.md"
 
 packages = [{ include = "cyberwater" , from = "src/clients/", to = "./clients" },
-    { include = "server" , from = "src/", to = "./" },
-    { include = "data_classes.py", from="src/", to="./"},
-    { include = "tests", to = "./tests" }]
+            { include = "server" , from = "src/", to = "./" },
+            { include = "data_classes.py", from="src/", to="./"},
+            { include = "tests", to = "./tests" }]
 
 [tool.poetry.dependencies]
-python     = ">=3.9.13.1"
+python     = ">3.9"
 fastapi    = "0.110.1"
 uvicorn    = "0.29.0"
 pydantic   = "2.7.0"

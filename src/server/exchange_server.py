@@ -1,6 +1,9 @@
+import sys
 from fastapi import FastAPI, HTTPException, Request, Response, Header
 from typing import Optional
 from sys import argv
+
+sys.path.append("..")
 from ..data_classes import SessionData, JoinSessionData, SessionID, SessionStatus
 
 import uvicorn
@@ -108,7 +111,10 @@ async def get_session_status(session_id: SessionID) -> int:
 
 @app.post("/join_session")
 async def join_session(data: JoinSessionData) -> dict:
-    """ Allow a new client to join an existing session """
+    """ 
+    Allow a new client to join an existing session 
+    """
+
     with session_lock:
         session_id = data.session_id
         joining_invitee_id = data.invitee_id
@@ -217,8 +223,6 @@ async def end_session(data: SessionID):
 
         if len(session['end_requests']) < len(session['client_vars']):
             session['status'] = SessionStatus.PARTIAL_END.name
-            print("SESSION: ", session)
-            print("DATA: ", data)
             # if client_id belongs to initiator, end initiator, otherwise end invitee
             if session["client_id"] == data.client_id:
                 vars_to_clear = session['client_vars'][data.initiator_id]
@@ -236,6 +240,7 @@ async def end_session(data: SessionID):
             del sessions[data]
             return {"status": SessionStatus.END.name, "session_id": data}
         
+
 if __name__ == '__main__':
     # Task to print sessions periodically
     loop = asyncio.get_event_loop()
@@ -257,5 +262,4 @@ if __name__ == '__main__':
     print(f"Starting server at {host_ip}:{host_port}")
     # Start the server with Uvicorn
     uvicorn.run(app, host=host_ip, port=host_port)
-
 

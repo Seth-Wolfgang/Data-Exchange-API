@@ -107,31 +107,28 @@ class Test:
             start_session(self.session_data)
             assert "Error: Server URL not set." in str(context).lower()
 
-    # def test_status_join(self):
+    def test_status_join(self):
 
-    #     start_session(self.session_data)
-    #     session_id = [2001,2005,35,38,1]
-    #     set_session_id(session_id)
+        session_id = start_session(self.session_data)
+        set_session_id(session_id)
 
-    #     # # Check the session status first
-    #     session_status = retrieve_session_status(session_id)
-    #     assert session_status is not None, "Session should be created."
+        # # Check the session status first
+        session_status = retrieve_session_status(session_id)
+        assert session_status is not None, "Session should be created."
 
-    #     join_status = join_session_with_retries(session_id, invitee_id=38, max_retries=5, retry_delay=5)
-    #     assert join_status == 1, "Joined the session successfully."
+        join_status = join_session_with_retries(session_id, invitee_id=38, max_retries=5, retry_delay=5)
+        assert join_status == 1, "Joined the session successfully."
             
-    # def test_status_active(self):
+    def test_status_active(self):
 
-    #     start_session(self.session_data)
-    #     session_id = [2001,2005,35,38,2]
-    #     set_session_id(session_id)
+        session_id = start_session(self.session_data)
 
-    #     # # Check the session status first
-    #     session_status = retrieve_session_status(session_id)
-    #     assert session_status is not None, "Session should be created."
+        # # Check the session status first
+        session_status = retrieve_session_status(session_id)
+        assert session_status is not None, "Session should be created."
 
-    #     join_status = join_session_with_retries(session_id, invitee_id=38, max_retries=5, retry_delay=5)
-    #     assert join_status == 1, "Joined the session successfully."
+        join_status = join_session_with_retries(session_id, invitee_id=38, max_retries=5, retry_delay=5)
+        assert join_status == 1, "Joined the session successfully."
     
     def test_status_partial_end(self):
 
@@ -151,15 +148,15 @@ class Test:
     # def test_end_session_of_another_user(self):
             
     #         # User 1
-    #         start_session(self.session_data)
-    #         session_id = [2001,2005,35,38,1]
-    #         set_session_id(session_id)
+    #         session_id_1 = start_session(self.session_data)
+    #         # session_id_1 = [2001,2005,35,38,1]
+    #         # set_session_id(session_id)
 
-    #         # User 2
-    #         start_session(self.session_data)
-    #         session_id = [2001,2005,1,1,2]
-    #         set_session_id(session_id)
-    
+    #         # User 2           
+    #         session_id_2 = join_session(self.server_url, session_id_1, session_id_1.invitee_id)
+    #         # session_id = [2001,2005,1,1,2]
+    #         # set_session_id(session_id)
+            
     #         # # Check the session status first
     #         session_status = retrieve_session_status(session_id)
     #         assert session_status is not None, "Session should be created."
@@ -167,4 +164,4 @@ class Test:
     #         join_status = join_session_with_retries(session_id, invitee_id=38, max_retries=5, retry_delay=5)
     #         assert join_status == 1, "Joined the session successfully."
     
-    #         assert end_session(self.server_url, session_id, 38) == False, "Session should not end successfully."
+    #         assert end_session(self.server_url, session_id, 38) == SessionStatus.PARTIAL_END.name, "Session should not end successfully."

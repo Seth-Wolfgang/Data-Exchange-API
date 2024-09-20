@@ -1,11 +1,13 @@
+import sys
 import requests
 import struct
 
 from typing import Union
+
+# Quick and dirty way to import data_classes.py from the src directory
+# TODO: Fix this properly
+sys.path.append("../../src/data_classes.py")
 from data_classes import JoinSessionData, SessionData, SessionID, SessionStatus
-
-cert_path = "/global/homes/a/amlodha/Final_Data_Exchange_Service_Code1/src/clients/cyberwater/lib/ssl-cert-snakeoil.pem"
-
 
 
 def create_session(server_url, source_model_id, destination_model_id, initiator_id, invitee_id,
@@ -42,7 +44,7 @@ def create_session(server_url, source_model_id, destination_model_id, initiator_
     )
 
     # Send POST request to the server
-    response = requests.post(f"{server_url}/create_session", json=data.model_dump(), verify=False)
+    response = requests.post(f"{server_url}/create_session", json=data.model_dump())
 
     # Check response status
     if response.ok and response.json().get('status') == 'created':
@@ -167,7 +169,7 @@ def send_data(server_url, session_id, var_id, data) -> requests.Response:
     }
 
     # Send the binary data as a POST request to the server
-    return requests.post(f"{server_url}/send_data", data=binary_data, headers=headers, verify=False)
+    return requests.post(f"{server_url}/send_data", data=binary_data, headers=headers)
 
 
 def get_variable_flag(server_url, session_id, var_id) -> Union[int, None]:

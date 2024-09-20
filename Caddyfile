@@ -1,0 +1,6 @@
+dataexchange.cis240199.projects.jetstream-cloud.org
+reverse_proxy server:8000
+
+log {
+	output stdout
+}

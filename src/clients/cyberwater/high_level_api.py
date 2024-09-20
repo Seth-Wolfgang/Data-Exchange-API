@@ -2,7 +2,7 @@ import numpy as np
 import time
 
 # Assuming there is an external module named http_interface that provides required HTTP functionalities
-from .low_level_api import create_session, get_session_status, join_session, send_data, get_variable_flag, receive_data, end_session
+from low_level_api import create_session, get_session_status, join_session, send_data, get_variable_flag, receive_data, end_session
 from data_classes import SessionData, SessionStatus, SessionID
 from typing import Union, List
 
@@ -44,6 +44,7 @@ def start_session(sd: SessionData) -> SessionID:
     return create_session(SERVER_URL, sd.source_model_id, sd.destination_model_id,
                 sd.initiator_id, sd.invitee_id, sd.input_variables_id, sd.input_variables_size,
                 sd.output_variables_id, sd.output_variables_size)
+
 
 def retrieve_session_status(session_id: SessionID):
     if not SERVER_URL_SET:
@@ -155,7 +156,7 @@ def receive_data_with_retries(var_receive, max_retries, retry_delay) -> tuple[in
         if data_array is not None:
             status_receive = 1  # Set status to 1 (success)
             print("Data received successfully.")
-            return (status_receive, data_array)
+            return (status_receive, data_array) # type: ignore
         else:
             print("Failed to fetch data, retrying...")
             time.sleep(retry_delay)
@@ -171,3 +172,25 @@ def end_session_now():
         return
     
     end_session(SERVER_URL, SESSION_ID)
+
+if __name__ == "__main__":
+   
+    server_url = "https://dataexchange2.cis240199.projects.jetstream-cloud.org"
+    cert_path = "/home/sethwolfgang/vscode/ModelDataExchange/src/clients/cyberwater/cert.pem"
+    data = SessionData(
+        source_model_id=2001,
+        destination_model_id=2005,
+        initiator_id=35,
+        invitee_id=38,
+        input_variables_id=[1, 2, 3],
+        input_variables_size=[2, 3, 4],
+        output_variables_id=[5, 6, 7],
+        output_variables_size=[2, 3, 4]
+    )
+    import requests
+    # Send POST request to the server
+    set_server_url(server_url)
+
+    session_id: SessionID = start_session(data)
+    set_session_id(session_id)
+

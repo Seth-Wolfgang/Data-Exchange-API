@@ -7,12 +7,8 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /code
 
-COPY ./requirements.txt /code/requirements.txt
+COPY . /code
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-COPY ./src/server/exchange_server.py /code/src/server/exchange_server.py
-
-RUN pip install uvicorn==0.29.0
-
-CMD python3 -m uvicorn src.server.exchange_server:app --host=0.0.0.0 --port=8000
+CMD [ "python3", "-m", "uvicorn", "src.server.exchange_server:app", "--host", "0.0.0.0" ]

@@ -95,6 +95,10 @@ Navigate to the directory containing `exchange_server.py` (`./src/server`). Star
 ```bash
   python exchange_server.py
 ```
+or
+```bash
+  python3 -m uvicorn src.server.exchange_server:app
+```
 This will start the server on your local machine, listening on port 8000. (default, you can change it according to the client requirements).
 
 ## Testing the Cyberwater Client

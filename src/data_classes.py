@@ -54,7 +54,7 @@ class Session:
         self.data = {var: None for var in set(data.input_variables_id) | set(data.output_variables_id)},
         self.flags = {var: 0 for var in set(data.input_variables_id) | set(data.output_variables_id)},
         self.sizes = {**dict(zip(data.input_variables_id, data.input_variables_size)),
-                     **dict(zip(data.output_variables_id, data.output_variables_size))}
+                      **dict(zip(data.output_variables_id, data.output_variables_size))}
 
         # UUIDs for the initiator and invitee
         # UUIDs are used to identify the session
