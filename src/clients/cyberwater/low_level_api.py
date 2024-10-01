@@ -1,13 +1,11 @@
-import sys
+from base64 import b64encode
+import base64
 import requests
 import struct
 
 from typing import Union
 
-# Quick and dirty way to import data_classes.py from the src directory
-# TODO: Fix this properly
-sys.path.append("../../src/data_classes.py")
-from data_classes import JoinSessionData, SessionData, SessionID, SessionStatus
+from ModelDataExchange.data_classes import JoinSessionData, SessionData, SessionID, SessionStatus, SendSessionData
 
 
 def create_session(server_url, source_model_id, destination_model_id, initiator_id, invitee_id,
@@ -45,13 +43,13 @@ def create_session(server_url, source_model_id, destination_model_id, initiator_
 
     # Send POST request to the server
     response = requests.post(f"{server_url}/create_session", json=data.model_dump())
-
+    print(response)
     # Check response status
-    if response.ok and response.json().get('status') == 'created':
-        session_info: dict = response.json()
+    if response.json().get('status') == SessionStatus.CREATED.value:
+        session_info = response.json()
         session_id = session_info.get('session_id')
 
-        print(f"Session status: {session_info.get('status', 'unknown')}. Session ID: {session_id}")
+        print(f"Session status: {session_info.get('status', SessionStatus.UNKNOWN)}. Session ID: {session_id}")
 
         return SessionID(
             source_model_id=source_model_id,
@@ -60,6 +58,7 @@ def create_session(server_url, source_model_id, destination_model_id, initiator_
             invitee_id=invitee_id,
             client_id= str(f'{session_id["client_id"]}') # type: ignore
         )
+    
     else:
         print("Error occurred. Invalid input:", response.text)
         raise Exception(f"Error occurred. Invalid input: {response.text}") 
@@ -86,7 +85,7 @@ def get_session_status(server_url, session_id):
         # Extract the session status from the JSON response
         session_status = response.json()
         # print(f"Session status: {SessionStatus[session_status]}")
-        return SessionStatus(session_status).name
+        return SessionStatus(session_status)
     else:
         # Optionally handle different error codes distinctly if needed
         raise Exception(f"Failed to retrieve session status. Server responded with: {response.status_code} - {response.text}")
@@ -132,7 +131,7 @@ def get_variable_size(server_url, session_id, var_id) -> int:
     """
     # Construct the URL and set parameters for the GET request
     url = f"{server_url}/get_variable_size"
-    params = {'session_id': session_id, 'var_id': var_id}
+    params = {'session_id': str(session_id), 'var_id': var_id}
 
     # Perform the GET request
     response = requests.get(url, params=params)
@@ -161,15 +160,19 @@ def send_data(server_url, session_id, var_id, data) -> requests.Response:
     """
     # Convert the list of doubles into binary data using little-endian format
     binary_data = struct.pack('<' + 'd' * len(data), *data)
+    # binary_data = b64encode(binary_data).decode("utf-8")
+    # binary_data = base64.encodebytes(struct.pack('<' + 'd' * len(data), *data)).decode("utf-8")
+    # binary_data = base64.encodebytes(data).decode("utf-8")
 
     # Prepare HTTP headers to include session and variable identifiers
     headers = {
-        'Session-ID': session_id,
+        'Session-ID': str(session_id),
         'Var-ID': str(var_id)
     }
-
+    # print(','.join(map(str, arr)))
     # Send the binary data as a POST request to the server
-    return requests.post(f"{server_url}/send_data", data=binary_data, headers=headers)
+    result = requests.post(f"{server_url}/send_data", data=binary_data, headers=headers)
+    return result
 
 
 def get_variable_flag(server_url, session_id, var_id) -> Union[int, None]:
@@ -186,7 +189,7 @@ def get_variable_flag(server_url, session_id, var_id) -> Union[int, None]:
     """
     # Construct the URL and set parameters for the GET request
     url = f"{server_url}/get_variable_flag"
-    params = {'session_id': session_id, 'var_id': var_id}
+    params = {'session_id': str(session_id), 'var_id': var_id}
 
     # Perform the GET request
     response = requests.get(url, params=params, verify=False)
@@ -216,7 +219,7 @@ def receive_data(server_url, session_id, var_id) -> Union[tuple[float], None]:
     Returns:
         list of float: The unpacked data array of double precision floats, or None if an error occurred.
     """
-    params = {"session_id": session_id, "var_id": var_id}
+    params = {"session_id": str(session_id), "var_id": var_id}
 
     response = requests.get(f"{server_url}/receive_data", params=params, verify=False)
 
@@ -230,7 +233,6 @@ def receive_data(server_url, session_id, var_id) -> Union[tuple[float], None]:
     else:
         print("Error retrieving data:", response.text)
         raise Exception(f"Error retrieving data: {response.text}")
-        return None
     
 def end_session(server_url: str, session_id: SessionID) -> bool:
     """

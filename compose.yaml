@@ -6,30 +6,19 @@ services:
     container_name: server
     build:
       context: .
-    networks:
-      - web
-    expose:
-      - 8000
+    network_mode: host
   caddy:
     image: caddy:alpine
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./site:/srv
       - caddy_data:/data
       - caddy_config:/config
-    networks:
-      - web
+    network_mode: host
     depends_on:
       - server
 volumes:
   caddy_data:
   caddy_config:
   
-networks:
-  web:
-    driver: bridge

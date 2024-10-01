@@ -1,10 +1,11 @@
 import numpy as np
 import time
 
-# Assuming there is an external module named http_interface that provides required HTTP functionalities
-from low_level_api import create_session, get_session_status, join_session, send_data, get_variable_flag, receive_data, end_session
-from data_classes import SessionData, SessionStatus, SessionID
+from ModelDataExchange.clients.cyberwater.low_level_api import create_session, get_session_status, join_session, send_data, get_variable_flag, receive_data, end_session
+from ModelDataExchange.data_classes import SessionData, SessionStatus, SessionID
+from ModelDataExchange.cw_cpl_indices import Vars
 from typing import Union, List
+
 
 # Global configuration
 SERVER_URL = ""
@@ -59,14 +60,14 @@ def join_session_with_retries(session_id: SessionID, invitee_id: int, max_retrie
         response = join_session(SERVER_URL, session_id, invitee_id)
         if response['success']:
             print("Successfully joined the session.")
-            return 1
+            return SessionStatus.CREATED
         else:
             print(f"Failed to join the session. Error: {response['error']}")
             if "Session is already active" in response['error']:
-                return 0
+                return SessionStatus.ERROR
             time.sleep(retry_delay)
             retries += 1
-    return 0
+    return SessionStatus.UNKNOWN
 
 def send_data_with_retries(var_send: int, arr_send: np.ndarray, max_retries: int, retry_delay: int) -> int:
 
@@ -175,22 +176,28 @@ def end_session_now():
 
 if __name__ == "__main__":
    
-    server_url = "https://dataexchange2.cis240199.projects.jetstream-cloud.org"
-    cert_path = "/home/sethwolfgang/vscode/ModelDataExchange/src/clients/cyberwater/cert.pem"
+    # server_url = "https://dataexchange.cis240199.projects.jetstream-cloud.org"
+    server_url = "http://127.0.0.1:8000"
+
     data = SessionData(
-        source_model_id=2001,
-        destination_model_id=2005,
+        source_model_id=Vars.index_ELM.value,
+        destination_model_id=Vars.index_VIC5.value,
         initiator_id=35,
         invitee_id=38,
-        input_variables_id=[1, 2, 3],
+        input_variables_id=[Vars.index_a2l_latitude.value, 
+                            Vars.index_a2l_longitude.value, 
+                            Vars.index_Sa_z.value],
         input_variables_size=[2, 3, 4],
-        output_variables_id=[5, 6, 7],
+        output_variables_id=[Vars.index_l2a_latitude.value, 
+                             Vars.index_l2a_longitud.value, 
+                             Vars.index_Sl_t.value],
         output_variables_size=[2, 3, 4]
     )
-    import requests
-    # Send POST request to the server
+  
     set_server_url(server_url)
 
     session_id: SessionID = start_session(data)
+
     set_session_id(session_id)
 
+    end_session(server_url, session_id)

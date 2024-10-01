@@ -2,7 +2,7 @@
 # This file establishes the schema for communication between the Exchange Server and the clients.
 from enum import Enum
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import Base64Bytes, BaseModel, StrictBytes
 from typing import List
 
 # Data classes for the Exchange Server
@@ -25,13 +25,23 @@ class SessionID(BaseModel, frozen=True):
     invitee_id: int
     client_id: str
 
+    def __str__(self) -> str:
+        return f"{self.source_model_id},{self.destination_model_id},{self.initiator_id},{self.invitee_id},{self.client_id}"
 
+# Data classes for joining a session
 class JoinSessionData(BaseModel):
     session_id: SessionID
     invitee_id: int
 
 
+# Data class for sending data
+class SendSessionData(BaseModel):
+    session_id: SessionID
+    var_id: int
+    data: str
+
 class SessionStatus(Enum):
+    ERROR = -1
     UNKNOWN = 0
     CREATED = 1
     ACTIVE = 2

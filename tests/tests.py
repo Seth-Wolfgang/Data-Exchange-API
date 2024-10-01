@@ -81,7 +81,7 @@ class Test:
         assert session_id.invitee_id == 38, "Invitee ID should be 38."
         assert type(uuid.UUID(session_id.client_id)) is uuid.UUID, "Client ID should be a UUID."
 
-        assert retrieve_session_status(session_id) == SessionStatus.CREATED.name, "Session should be created."   
+        assert retrieve_session_status(session_id) == SessionStatus.CREATED, "Session should be created."   
 
 
     def test_start_session_without_url(self):
@@ -140,7 +140,7 @@ class Test:
         assert session_status is not None, "Session should be created."
 
         join_status = join_session_with_retries(session_id, invitee_id=38, max_retries=5, retry_delay=5)
-        assert join_status == 1, "Joined the session successfully."
+        assert join_status == SessionStatus.CREATED, "Joined the session successfully."
 
         end_status = end_session(self.server_url, session_id)
         assert end_status == True, "Session should end successfully."
