@@ -16,8 +16,8 @@ from ModelDataExchange.cw_cpl_indices import Vars
 
 
 ITERATIONS = 10
-URL = "http://127.0.0.1:8000"
-# URL = "https://dataexchange.cis240199.projects.jetstream-cloud.org"
+# URL = "http://127.0.0.1:8000"
+URL = "https://dataexchange.cis240199.projects.jetstream-cloud.org"
 SESSION_ID = None
 INVITEE_ID = 38
 

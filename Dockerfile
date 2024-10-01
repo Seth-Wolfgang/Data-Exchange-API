@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /code
 
 COPY . /code
-
+RUN ls -la 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-
+RUN pip install .
 CMD [ "python3", "-m", "uvicorn", "src.server.exchange_server:app", "--host", "0.0.0.0" ]
