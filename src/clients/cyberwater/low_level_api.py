@@ -1,14 +1,13 @@
-from base64 import b64encode
-import base64
+import asyncio
 import requests
 import struct
 
 from typing import Union
 
-from ModelDataExchange.data_classes import JoinSessionData, SessionData, SessionID, SessionStatus, SendSessionData
+from ModelDataExchange.data_classes import JoinSessionData, SessionData, SessionID, SessionStatus
 
 
-def create_session(server_url, source_model_id, destination_model_id, initiator_id, invitee_id,
+def create_session(server_url: str, source_model_id: int, destination_model_id: int, initiator_id: int, invitee_id: int,
                    input_variables_id=None, input_variables_size=None,
                    output_variables_id=None, output_variables_size=None) -> SessionID:
     """
@@ -20,13 +19,13 @@ def create_session(server_url, source_model_id, destination_model_id, initiator_
         destination_model_id (int): ID of the destination model.
         initiator_id (int): ID of the session initiator.
         inviter_id (int): ID of the inviter.
-        input_variables_id (list): Optional list of input variable IDs.
-        input_variables_size (list): Optional list of sizes for input variables.
-        output_variables_id (list): Optional list of output variable IDs.
-        output_variables_size (list): Optional list of sizes for output variables.
+        input_variables_id (list[int]): Optional list of input variable IDs.
+        input_variables_size (list[int]): Optional list of sizes for input variables.
+        output_variables_id (list[int]): Optional list of output variable IDs.
+        output_variables_size (list[int]): Optional list of sizes for output variables.
 
     Returns:
-        SessionID: BaseModel of JSON response from the server
+        SessionID: Pydantic BaseModel of JSON response from the server
     """
 
     # Prepare data for the POST request
@@ -63,7 +62,7 @@ def create_session(server_url, source_model_id, destination_model_id, initiator_
         print("Error occurred. Invalid input:", response.text)
         raise Exception(f"Error occurred. Invalid input: {response.text}") 
 
-def get_session_status(server_url, session_id):
+def get_session_status(server_url: str, session_id: SessionID):
     """
     Client-side function to retrieve the status of a session from the server.
 
@@ -78,7 +77,7 @@ def get_session_status(server_url, session_id):
     url = f"{server_url}/get_session_status"
     
     # Send the GET request to the server
-    response = requests.get(url, verify=False, json=session_id.model_dump())
+    response = requests.get(url, json=session_id.model_dump())
     
     # Check the response status
     if response.ok:
@@ -91,7 +90,7 @@ def get_session_status(server_url, session_id):
         raise Exception(f"Failed to retrieve session status. Server responded with: {response.status_code} - {response.text}")
         
 
-def join_session(server_url, session_id: SessionID, invitee_id) -> dict:
+def join_session(server_url: str, session_id: SessionID, invitee_id: int) -> dict:
     """
     Attempts to join a session with a given session ID and invitee ID.
     
@@ -109,7 +108,7 @@ def join_session(server_url, session_id: SessionID, invitee_id) -> dict:
     )
 
     try:
-        response = requests.post(f"{server_url}/join_session", json=data.model_dump(), verify=False)
+        response = requests.post(f"{server_url}/join_session", json=data.model_dump())
         if response.ok:
             return {'success': True}
         else:
@@ -117,7 +116,7 @@ def join_session(server_url, session_id: SessionID, invitee_id) -> dict:
     except Exception as e:
         return {'success': False, 'error': str(e)}
 
-def get_variable_size(server_url, session_id, var_id) -> int:
+def get_variable_size(server_url: str, session_id: SessionID, var_id: int) -> int:
     """
     Retrieves the size of a specific variable within a session from the server.
 
@@ -145,7 +144,7 @@ def get_variable_size(server_url, session_id, var_id) -> int:
         print("Error occurred while retrieving variable size:", response.text)
         return -1
     
-def send_data(server_url, session_id, var_id, data) -> requests.Response:
+def send_data(server_url: str, session_id: SessionID, var_id: int, data, delay: float = 0) -> requests.Response:
     """
     Sends a list of double precision floats as binary data to the server for a specific session and variable.
 
@@ -160,22 +159,21 @@ def send_data(server_url, session_id, var_id, data) -> requests.Response:
     """
     # Convert the list of doubles into binary data using little-endian format
     binary_data = struct.pack('<' + 'd' * len(data), *data)
-    # binary_data = b64encode(binary_data).decode("utf-8")
-    # binary_data = base64.encodebytes(struct.pack('<' + 'd' * len(data), *data)).decode("utf-8")
-    # binary_data = base64.encodebytes(data).decode("utf-8")
+
+    asyncio.run(call_delay(delay))
 
     # Prepare HTTP headers to include session and variable identifiers
     headers = {
         'Session-ID': str(session_id),
         'Var-ID': str(var_id)
     }
-    # print(','.join(map(str, arr)))
+
     # Send the binary data as a POST request to the server
     result = requests.post(f"{server_url}/send_data", data=binary_data, headers=headers)
     return result
 
 
-def get_variable_flag(server_url, session_id, var_id) -> Union[int, None]:
+def get_variable_flag(server_url: str, session_id: SessionID, var_id: int) -> Union[int, None]:
     """
     Retrieves the flag status for a specific variable within a session.
 
@@ -192,7 +190,7 @@ def get_variable_flag(server_url, session_id, var_id) -> Union[int, None]:
     params = {'session_id': str(session_id), 'var_id': var_id}
 
     # Perform the GET request
-    response = requests.get(url, params=params, verify=False)
+    response = requests.get(url, params=params)
 
     # Check if the request was successful
     if response.ok:
@@ -206,7 +204,7 @@ def get_variable_flag(server_url, session_id, var_id) -> Union[int, None]:
         return None
 
 
-def receive_data(server_url, session_id, var_id) -> Union[tuple[float], None]:
+def receive_data(server_url: str, session_id: SessionID, var_id: int, delay: float = 0) -> Union[tuple[float], None]:
     """
     Receives binary data from the server for a given session and variable ID, assuming the data
     is a stream of double precision floats.
@@ -220,8 +218,10 @@ def receive_data(server_url, session_id, var_id) -> Union[tuple[float], None]:
         list of float: The unpacked data array of double precision floats, or None if an error occurred.
     """
     params = {"session_id": str(session_id), "var_id": var_id}
+    
+    asyncio.run(call_delay(delay))
 
-    response = requests.get(f"{server_url}/receive_data", params=params, verify=False)
+    response = requests.get(f"{server_url}/receive_data", params=params)
 
     if response.ok:
         binary_data = response.content
@@ -245,7 +245,7 @@ def end_session(server_url: str, session_id: SessionID) -> bool:
     """
 
     # Send the POST request to end the session
-    response = requests.post(f"{server_url}/end_session", json=session_id.model_dump(), verify=False)
+    response = requests.post(f"{server_url}/end_session", json=session_id.model_dump())
 
     # Check if the request was successful
     if response.ok:
@@ -256,3 +256,12 @@ def end_session(server_url: str, session_id: SessionID) -> bool:
         # Print an error message if the request failed
         print("Error ending session:", response.text)
         return False
+
+async def call_delay(seconds: float):
+    """
+        Helper function to create a delay without stopping the program's execution.
+
+        Parameters:
+            seconds (int): The number of seconds to delay the program's execution
+    """
+    await asyncio.sleep(seconds)

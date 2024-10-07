@@ -31,7 +31,7 @@ fig, axes = plt.subplots(nrows=len(unique_names), ncols=1, figsize=(10, 30))
 # Iterate and plot
 for i, name in enumerate(unique_names):
     df_subset = df_grouped[df_grouped['name'] == name]
-    axes[i].plot(df_subset['test_size'], df_subset[' mean'])
+    axes[i].plot(df_subset['test_size'], df_subset[' min'])
     axes[i].set_xlabel('Test Size')
     axes[i].set_ylabel('Average Mean')
     axes[i].set_title(f'Average Mean vs Test Size for {name}')
