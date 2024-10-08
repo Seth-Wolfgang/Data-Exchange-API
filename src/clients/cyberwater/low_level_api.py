@@ -1,4 +1,5 @@
 import asyncio
+import numpy as np
 import requests
 import struct
 
@@ -204,7 +205,7 @@ def get_variable_flag(server_url: str, session_id: SessionID, var_id: int) -> Un
         return None
 
 
-def receive_data(server_url: str, session_id: SessionID, var_id: int, delay: float = 0) -> Union[tuple[float], None]:
+def receive_data(server_url: str, session_id: SessionID, var_id: int, delay: float = 0) -> Union[np.ndarray, None]:
     """
     Receives binary data from the server for a given session and variable ID, assuming the data
     is a stream of double precision floats.
@@ -226,9 +227,10 @@ def receive_data(server_url: str, session_id: SessionID, var_id: int, delay: flo
     if response.ok:
         binary_data = response.content
         num_doubles = len(binary_data) // 8  # Each double is 8 bytes
-        unpacked_data = struct.unpack(f'<{num_doubles}d', binary_data)
+        unpacked_data = np.ndarray(shape=(num_doubles,), dtype="<d", buffer=binary_data)
+        # unpacked_data = struct.unpack(f'<{num_doubles}d', binary_data)
         print(f"Received binary data of length {num_doubles}")
-        print("Data array:", unpacked_data)
+        # print("Data array:", unpacked_data)
         return unpacked_data
     else:
         print("Error retrieving data:", response.text)

@@ -87,6 +87,8 @@ async def create_session(session_data: SessionData):
             'flags': {var: 0 for var in set(session_data.input_variables_id) | set(session_data.output_variables_id)},
             'client_vars': {session_data.initiator_id: list(session_data.input_variables_id)},
             'client_id': session_id.client_id,
+            'invitee_id': session_data.invitee_id,
+            'initiator_id': session_data.initiator_id,
             'end_requests': set(),
             'var_sizes': var_sizes
         }
@@ -129,12 +131,14 @@ async def join_session(data: JoinSessionData) -> dict:
     with session_lock:
         session_id = data.session_id
         joining_invitee_id = data.invitee_id
+        
 
         if session_id not in sessions:
             raise HTTPException(status_code=404, detail="Session not found")
         elif sessions[session_id].get('status') == SessionStatus.ACTIVE:
             raise HTTPException(status_code=400, detail="Session is already active")
         elif joining_invitee_id != sessions[session_id]['invitee_id']:
+            print(f"Invitee ID does not match. Expected: {sessions[session_id]['invitee_id']}, Got: {joining_invitee_id}")
             raise HTTPException(status_code=403, detail="Invitee ID does not match")
 
         # Assign variables not used by the initiator to the joining client
@@ -272,7 +276,7 @@ async def end_session(data: SessionID):
                 vars_to_clear = session['client_vars'][data.invitee_id]
             
             for var in vars_to_clear:
-                print ("Variable Clearing:", var)
+                # print ("Variable Clearing:", var)
                 if var in session['data']:
                     session['data'][var] = None
                     session['flags'][var] = 0
