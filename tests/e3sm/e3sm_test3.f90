@@ -4,7 +4,7 @@ program e3sm_test_iterations
     use iso_c_binding, only: c_int, c_double, c_null_char
     implicit none
     type(session_data) :: sd
-    integer(c_int), dimension(5) :: id
+    type(SessionID) :: id
     real(c_double), dimension(50) :: arr_send
     integer :: var_to_send, send_status, loop_index
     real(c_double), dimension(:), allocatable :: arr_receive
@@ -17,8 +17,9 @@ program e3sm_test_iterations
 
 
     ! Set the server URL at runtime
-    call set_server_url("http://127.0.0.1:8000")
-
+    ! call set_server_url("http://127.0.0.1:8000")
+    call set_server_url("https://dataexchange.cis240199.projects.jetstream-cloud.org")
+    
     ! User sets values directly
     sd%source_model_ID = 2001
     sd%destination_model_ID = 2005
@@ -30,7 +31,7 @@ program e3sm_test_iterations
     sd%output_variables_size = [50]
 
     ! Write the session_ID for the whole program
-    id = [2001, 2005, 35, 38, 1]
+    id = start_session(sd)
     call set_session_id(id)
 
     ! Join the session

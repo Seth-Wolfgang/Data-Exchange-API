@@ -273,11 +273,11 @@ if __name__ == "__main__":
     print("Session ID:", session_id)
 
     # send_data(server_url, session_id, 1, np.array([1.0, 2.0]), delay=5)
-    send_data_with_retries(1, np.array([1.0, 2.0]), 5, retry_delay=2)
-    send_data_with_retries(1, np.array([1.0, 2.0]), 5, retry_delay=2)
+    # send_data_with_retries(1, np.array([1.0, 2.0]), 5, retry_delay=2)
+    # send_data_with_retries(1, np.array([1.0, 2.0]), 5, retry_delay=2)
 
     # receive_data(server_url, session_id, 1, delay=5)
-    receive_data_with_retries(2, 5, 5, delay=3)
+    # receive_data_with_retries(2, 5, 5, delay=3)
     # end_session(server_url, session_id)
     end_session_now()
 

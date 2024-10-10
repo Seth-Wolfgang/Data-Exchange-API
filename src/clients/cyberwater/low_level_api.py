@@ -214,6 +214,7 @@ def receive_data(server_url: str, session_id: SessionID, var_id: int, delay: flo
         server_url (str): The server URL.
         session_id (str): The session ID from which data is to be retrieved.
         var_id (int): The variable ID associated with the data.
+        delay (float): The delay in seconds to simulate network latency.
     
     Returns:
         list of float: The unpacked data array of double precision floats, or None if an error occurred.

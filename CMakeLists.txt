@@ -6,6 +6,7 @@ project(DataExchangeServer LANGUAGES C Fortran) # C and fortran
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
+
 # Function to make fortran modules easy to link
 # Source: https://stackoverflow.com/questions/54549959/how-to-fix-cmake-fortran-modules-dependency
 function(add_fortran_library LIB)

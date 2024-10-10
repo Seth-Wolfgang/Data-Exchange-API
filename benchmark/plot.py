@@ -5,7 +5,7 @@ pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 
 # Read the CSV file into a DataFrame
-df = pd.read_csv('statistical_results.txt')
+df = pd.read_csv(' results/jetstream/statistical_results.txt')
 
 # Display the first 5 rows
 print(df.head().to_markdown(index=False, numalign="left", stralign="left"))
