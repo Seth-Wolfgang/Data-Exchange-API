@@ -476,7 +476,7 @@ def write_results(raw, stats):
     
     with open("raw_results.txt", "w") as file:
         for key in raw.keys():
-            file.write(f"{key}, {', '.join([str(x) for x in raw[key]])}\n")
+            file.write(f"{key}, {','.join([str(x) for x in raw[key]])}\n")
     
     with open("statistical_results.txt", "w") as file:
         file.write("name, mean, median, variance, std_dev, min, max, range\n")

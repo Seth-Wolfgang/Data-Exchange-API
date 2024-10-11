@@ -262,7 +262,7 @@ async def end_session(data: SessionID):
 
         session = sessions[data]
         if data.client_id not in session['client_id']:
-            raise HTTPException(status_code=404, detail="User not part of the session")
+            raise HTTPException(status_code=400, detail="User not part of the session")
 
         session['end_requests'].add(data.client_id)
 
