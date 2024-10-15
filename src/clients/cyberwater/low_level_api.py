@@ -5,8 +5,7 @@ import struct
 
 from typing import Union
 
-from ModelDataExchange.data_classes import JoinSessionData, SessionData, SessionID, SessionStatus
-
+from ModelDataExchange.data_classes import JoinSessionData, SessionData, SessionID, SessionStatus, PostSessionData
 
 def create_session(server_url: str, source_model_id: int, destination_model_id: int, initiator_id: int, invitee_id: int,
                    input_variables_id=None, input_variables_size=None,
@@ -76,9 +75,10 @@ def get_session_status(server_url: str, session_id: SessionID):
     """
     # Construct the URL for the GET request
     url = f"{server_url}/get_session_status"
-    
+    params = {'session_id': str(session_id)}
+
     # Send the GET request to the server
-    response = requests.get(url, json=session_id.model_dump())
+    response = requests.get(url, params=params)
     
     # Check the response status
     if response.ok:
@@ -219,11 +219,13 @@ def receive_data(server_url: str, session_id: SessionID, var_id: int, delay: flo
     Returns:
         list of float: The unpacked data array of double precision floats, or None if an error occurred.
     """
-    params = {"session_id": str(session_id), "var_id": var_id}
+    params = PostSessionData(
+        session_id=session_id,
+        param_id=var_id
+    )
     
     asyncio.run(call_delay(delay))
-
-    response = requests.get(f"{server_url}/receive_data", params=params)
+    response = requests.post(f"{server_url}/receive_data", json=params.model_dump())
 
     if response.ok:
         binary_data = response.content

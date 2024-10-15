@@ -5,7 +5,7 @@ program e3sm_test_iterations
     implicit none
     type(session_data) :: sd
     type(SessionID) :: id
-    real(c_double), dimension(50) :: arr_send
+    real(c_double), dimension(5000) :: arr_send
     integer :: var_to_send, send_status, loop_index
     real(c_double), dimension(:), allocatable :: arr_receive
     integer :: status_receive     ! Corrected type for status_receive
@@ -28,7 +28,7 @@ program e3sm_test_iterations
     sd%input_variables_ID = [1]
     sd%input_variables_size = [50]
     sd%output_variables_ID = [4]
-    sd%output_variables_size = [50]
+    sd%output_variables_size = [5000]
 
     ! Write the session_ID for the whole program
     id = start_session(sd)
@@ -53,16 +53,16 @@ program e3sm_test_iterations
       ! Send data to the server
       var_to_send = 4
       ! Initialize data array
-      do loop_index = 1, 50
+      do loop_index = 1, 5000
           arr_send(loop_index) = real(loop_index, kind=c_double)
       end do
       ! Call the function and capture the return status
       send_status = send_data_with_retries(var_to_send, arr_send, 5, 5)
       print *, "Status of send operation:", send_status
-      print *, "------ Sleeping for 10 seconds ------"
-      call sleep(10)
+      print *, "------ Sleeping for 1 seconds ------"
+      call sleep(1)
 
-      receive_var_id = 1
+      receive_var_id = 4
       if (check_data_availability_with_retries(receive_var_id, 5, 5) == 1) then
           ! Proceed with data retrieval
           receive_var_size = retrieve_variable_size(id, receive_var_id)
@@ -94,8 +94,8 @@ program e3sm_test_iterations
       if (allocated(arr_receive)) then
           deallocate(arr_receive)
       endif
-      print *, "------ Sleeping for 10 seconds ------"
-      call sleep(10)
+      print *, "------ Sleeping for 1 seconds ------"
+      call sleep(1)
 
     end do
 

@@ -97,6 +97,21 @@ class JoinSessionData(BaseModel):
     invitee_id: int
 
 
+# Data classes for post requests
+class PostSessionData(BaseModel):
+
+    """
+    Data class for joining a session.
+
+    Attributes:
+        session_id (SessionID): The session ID to join.
+        param      (int): ID of the input (invitee_id for join_session or var_id for send/recv_data).
+    """
+
+    session_id: SessionID
+    param_id:   int
+
+
 class SessionStatus(Enum):
 
     """

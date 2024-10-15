@@ -2,12 +2,12 @@ module low_level_fortran_interface
     use, intrinsic :: iso_c_binding, only: c_int, c_char, c_double, c_ptr
     implicit none
 
-  type, bind(c) :: SessionID
+  type, bind(C) :: SessionID
     integer(c_int) :: source_model_ID
     integer(c_int) :: destination_model_ID
     integer(c_int) :: initiator_id
     integer(c_int) :: invitee_id
-    character(c_char), dimension(36) :: instance_id
+    character(kind=c_char), dimension(36) :: instance_id
   end type SessionID
 
     ! Define interfaces to C functions for HTTP interactions
@@ -18,12 +18,11 @@ module low_level_fortran_interface
             type(c_ptr), value :: ptr
         end subroutine c_free
         ! Creates a new session on the server
-        function create_session(url, source_model_ID, destination_model_ID, &
+        subroutine create_session(url, source_model_ID, destination_model_ID, &
                                     initiator_id, invitee_id, input_variables_ID, input_variables_size, &
                                     no_of_input_variables, output_variables_ID, output_variables_size, &
-                                    no_of_output_variables) bind(C) result(session_id)
+                                    no_of_output_variables, local_session_id) bind(C, name="create_session")
             import :: c_char, c_int, SessionID
-            type(SessionID) :: session_id
             character(kind=c_char), intent(in) :: url(*)
             integer(c_int), value :: source_model_ID, destination_model_ID
             integer(c_int), value :: initiator_id, invitee_id
@@ -31,8 +30,9 @@ module low_level_fortran_interface
             integer(c_int), value :: no_of_input_variables
             integer(c_int), intent(in) :: output_variables_ID(*), output_variables_size(*)
             integer(c_int), value :: no_of_output_variables
+            type(SessionID), intent(inout):: local_session_id
 
-        end function create_session
+        end subroutine create_session
 
         function get_session_status(url, session_id) bind(C, name="get_session_status")
             import :: c_char, c_int, SessionID

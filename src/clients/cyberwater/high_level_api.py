@@ -2,9 +2,11 @@ import asyncio
 import numpy as np
 
 from ModelDataExchange.clients.cyberwater.low_level_api import create_session, get_session_status, join_session, send_data, get_variable_flag, receive_data, end_session, call_delay
-from ModelDataExchange.data_classes import SessionData, SessionStatus, SessionID
+from ModelDataExchange.data_classes import SessionData, SessionStatus, SessionID, JoinSessionData
 from ModelDataExchange.cw_cpl_indices import Vars
 from typing import Union, List
+
+
 
 
 # Global configuration
@@ -271,12 +273,18 @@ if __name__ == "__main__":
     session_id: SessionID = start_session(data)
     set_session_id(session_id)
     print("Session ID:", session_id)
+    print("Session ID JSON:", session_id.model_dump())
+    print("Session status:", retrieve_session_status(session_id))
+    # "{'source_model_id': 2001, 'destination_model_id': 2005, 'initiator_id': 35, 'invitee_id': 38, 'client_id': '931204ec-664d-4b4d-a343-b453ba573323'}"
+     # {'source_model_id': 2002, 'destination_model_id': 2005, 'initiator_id': 35, 'invitee_id': 38, 'client_id': '51dc5fe7-dc9d-4f50-9462-1fc2e1c4c2cd'}
+    print(JoinSessionData(session_id=session_id, invitee_id=38).model_dump())
+    join_session(server_url, session_id, 38)
 
     # send_data(server_url, session_id, 1, np.array([1.0, 2.0]), delay=5)
-    # send_data_with_retries(1, np.array([1.0, 2.0]), 5, retry_delay=2)
+    send_data_with_retries(1, np.array([1.0, 2.0]), 5, retry_delay=0)
     # send_data_with_retries(1, np.array([1.0, 2.0]), 5, retry_delay=2)
 
-    # receive_data(server_url, session_id, 1, delay=5)
+    receive_data(server_url, session_id, 1)
     # receive_data_with_retries(2, 5, 5, delay=3)
     # end_session(server_url, session_id)
     end_session_now()

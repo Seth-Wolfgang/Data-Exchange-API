@@ -97,7 +97,7 @@ async def create_session(session_data: SessionData):
     
 
 @app.get("/get_session_status")
-async def get_session_status(session_id: SessionID) -> int:
+async def get_session_status(session_id: str) -> int:
     """
     Retrieves the status of a specific session.
 
@@ -113,6 +113,8 @@ async def get_session_status(session_id: SessionID) -> int:
         SessionStatus.PARTIAL_END = 3
         SessionStatus.END = 4
     """
+
+    session_id = string_to_session_id(session_id) # type: ignore
     with session_lock:  # Assuming session_lock is a threading lock for thread-safe operations
         # Check if the session exists
         if session_id not in sessions:

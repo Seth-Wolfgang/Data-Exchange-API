@@ -60,11 +60,12 @@ contains
     endif
 
     ! Create a session with the server using the data from 'sd'
-    local_session_id = create_session(trim(server_url)// C_NULL_CHAR, sd%source_model_ID, sd%destination_model_ID, &
+    call create_session(trim(server_url)// C_NULL_CHAR, sd%source_model_ID, sd%destination_model_ID, &
                           sd%initiator_id, sd%invitee_id, sd%input_variables_ID, &
                           sd%input_variables_size, size(sd%input_variables_ID), &
                           sd%output_variables_ID, sd%output_variables_size, &
-                          size(sd%output_variables_ID))
+                          size(sd%output_variables_ID),  local_session_id )
+
     ! No cleanup needed here as 'sd' is managed by the calling program
   end function start_session
 

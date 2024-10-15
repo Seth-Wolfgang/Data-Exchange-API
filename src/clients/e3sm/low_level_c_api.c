@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define MAX_URL_SIZE 2048
 
 /**
@@ -33,23 +34,46 @@ typedef struct  {
  */
 
 void build_session_id_string(char* buffer, const SessionID session_id, const char* prefix) {
-        // Build the session_id string from the array
+    // Build the session_id string from the array
     // Calculate the size of the formatted string
-    int size = snprintf(NULL, 0, "%s,%d,%d,%d,%d,%s", prefix,
-                                                             session_id.source_model_id, // int
-                                                             session_id.destination_model_id, // int
-                                                             session_id.initiator_id, // int
-                                                             session_id.invitee_id, // int 
-                                                             session_id.instance_id); // 36 chars
+    const int size = snprintf(NULL, 0, "%d%d%d%d", session_id.source_model_id, // int
+                                                        session_id.destination_model_id, // int
+                                                        session_id.initiator_id, // int
+                                                        session_id.invitee_id); // int 
+    if(strcmp(prefix, "\0") == 0)
+        // No prefix - Just builds ID string
+        snprintf(buffer, size+41, "%d,%d,%d,%d,%s", 
+                                                        session_id.source_model_id, // int
+                                                        session_id.destination_model_id, // int
+                                                        session_id.initiator_id, // int
+                                                        session_id.invitee_id, // int 
+                                                        session_id.instance_id); // 36 chars
+    else
+        // Format the session ID array into a string suitable for headers
+        snprintf(buffer, size + 41 + strlen(prefix), "%s%d,%d,%d,%d,%s", prefix,
+                                                        session_id.source_model_id, // int
+                                                        session_id.destination_model_id, // int
+                                                        session_id.initiator_id, // int
+                                                        session_id.invitee_id, // int 
+                                                        session_id.instance_id); // 36 chars
+    printf("Constructed Session ID: %s\n", buffer);  // Debugging print
+}
 
-    // Format the session ID array into a string suitable for headers
-    snprintf(buffer, size + 1, "%s,%d,%d,%d,%d,%s", prefix,
-                                                           session_id.source_model_id, // int
-                                                           session_id.destination_model_id, // int
-                                                           session_id.initiator_id, // int
-                                                           session_id.invitee_id, // int 
-                                                           session_id.instance_id); // 36 chars
-    printf("Constructed Session ID: %s, %d\n", buffer, size);  // Debugging print
+
+/**
+ * Construct a JSON payload for the session ID.
+ * 
+ * @param buffer Buffer to store the JSON payload
+ * @param session_id Session ID struct containing the session ID
+ * 
+ * @return void
+ */
+
+void build_session_id_json(char* buffer, const SessionID session_id) {
+    
+    // Start constructing the JSON payload
+    sprintf(buffer, "{\"source_model_id\": %d, \"destination_model_id\": %d, \"initiator_id\": %d, \"invitee_id\": %d, \"client_id\": \"%s\"}",
+            session_id.source_model_id, session_id.destination_model_id, session_id.initiator_id, session_id.invitee_id, session_id.instance_id);
 }
 
 /**
@@ -83,7 +107,7 @@ SessionID build_session_id(Memory* chunk) {
             strcpy(session_id.instance_id, innerToken);
         }
     }
-
+    printf("Session ID: %d, %d, %d, %d, %s\n", session_id.source_model_id, session_id.destination_model_id, session_id.initiator_id, session_id.invitee_id, session_id.instance_id);  // Debugging print
     return session_id;
 }
 
@@ -129,11 +153,11 @@ static size_t receive_data_callback(void *contents, size_t size, size_t nmemb, v
  * @param output_variables_size Array of sizes corresponding to output variables
  * @param no_of_output_variables Number of output variables
  */
-SessionID create_session(const char* base_url, int source_model_id, int destination_model_id, 
+void create_session(const char* base_url, int source_model_id, int destination_model_id, 
                       int initiator_id, int invitee_id,
                       int* input_variables_id, int* input_variables_size, 
                       int no_of_input_variables, int* output_variables_id, int* output_variables_size, 
-                      int no_of_output_variables) {
+                      int no_of_output_variables, SessionID* local_session_id) {
     CURL *curl;
     CURLcode res;
 
@@ -206,10 +230,11 @@ SessionID create_session(const char* base_url, int source_model_id, int destinat
         curl_slist_free_all(headers);
 
         // Extract the session ID from the received data
-        session_id = build_session_id(&chunk);
+        *local_session_id = build_session_id(&chunk);
 
         free(chunk.data);
-        return session_id; 
+        printf("(C) Session ID return: %d, %d, %d, %d, %s\n", local_session_id->source_model_id, local_session_id->destination_model_id, local_session_id->initiator_id, local_session_id->invitee_id, local_session_id->instance_id);  // Debugging print
+
     }
     curl_global_cleanup();
 }
@@ -225,7 +250,7 @@ SessionID create_session(const char* base_url, int source_model_id, int destinat
  * @param invitee_id Invitee identifier, used to authenticate the user and manage session access permissions.
  * @return int 1 if the operation was successful, 0 otherwise.
  */
-int join_session(const char *base_url, const SessionID session_id, int invitee_id) {
+int join_session(const char *base_url, const SessionID* session_id, int invitee_id) {
     CURL *curl;
     CURLcode res;
     char postFields[1024];
@@ -245,13 +270,10 @@ int join_session(const char *base_url, const SessionID session_id, int invitee_i
     //     strcat(session_id_str, temp);
     //     if (i < 4) strcat(session_id_str, ",");
     // }
-    build_session_id_string(session_id_str, session_id, "");
-
-    // Format the invitee_id into a string
-    snprintf(invitee_id_str, sizeof(invitee_id_str), "%d", invitee_id);
+    build_session_id_json(session_id_str, *session_id);
 
     // Construct the JSON payload
-    snprintf(postFields, sizeof(postFields), "{\"session_id\": \"%s\", \"invitee_id\": %s}", session_id_str, invitee_id_str);
+    snprintf(postFields, sizeof(postFields), "{\"session_id\": %s, \"invitee_id\": %d}", session_id_str, invitee_id);
     // printf("Constructed Payload: %s\n", postFields);  // Debugging print
 
     // Initialize CURL
@@ -300,7 +322,7 @@ static size_t get_session_status_callback(void *contents, size_t size, size_t nm
     return real_size;
 }
 
-int get_session_status(const char *base_url, const SessionID session_id) {
+int get_session_status(const char *base_url, const SessionID* session_id) {
     CURL *curl;
     CURLcode res;
     char url[256];
@@ -315,8 +337,7 @@ int get_session_status(const char *base_url, const SessionID session_id) {
     //     strcat(session_id_str, temp);
     //     if (i < 4) strcat(session_id_str, ",");
     // }
-    build_session_id_string(session_id_str, session_id, "");
-
+    build_session_id_string(session_id_str, *session_id, "");
 
     snprintf(url, sizeof(url), "%s/get_session_status?session_id=%s", base_url, session_id_str);
 
@@ -383,7 +404,7 @@ static size_t get_variable_flag_callback(void *contents, size_t size, size_t nme
  * @param var_id Variable ID whose flag status is to be retrieved.
  * @return The flag status as an integer (-1 on error, otherwise the actual flag status).
  */
-int get_variable_flag(const char* base_url, const SessionID session_id, int var_id) {
+int get_variable_flag(const char* base_url, const SessionID* session_id, int var_id) {
     CURL *curl;
     CURLcode res;
     char url[512];
@@ -391,7 +412,7 @@ int get_variable_flag(const char* base_url, const SessionID session_id, int var_
     int flag_status = -1;  // Default to -1 to indicate an error
 
     // Generate session_id query from the array
-    build_session_id_string(session_query, session_id, "session_id=");
+    build_session_id_string(session_query, *session_id, "session_id=");
 
     // Construct the full URL with the session ID and variable ID query parameters
     snprintf(url, sizeof(url), "%s/get_variable_flag?%s&var_id=%d", base_url, session_query, var_id);
@@ -448,7 +469,7 @@ size_t get_variable_size_callback(char* ptr, size_t size, size_t nmemb, void* us
  * @param var_id The variable ID whose size is to be fetched.
  * @return The size of the variable as an integer. Returns -1 if an error occurs or the size is not found.
  */
-int get_variable_size(const char* base_url, const SessionID session_id, int var_id) {
+int get_variable_size(const char* base_url, const SessionID* session_id, int var_id) {
     CURL *curl;
     CURLcode res;
     char full_url[MAX_URL_SIZE];
@@ -456,7 +477,7 @@ int get_variable_size(const char* base_url, const SessionID session_id, int var_
     int size = -1;  // Default to -1 to indicate failure or not found
 
     // Generate the session_id query string from the array
-    build_session_id_string(session_query, session_id, "session_id=");
+    build_session_id_string(session_query, *session_id, "session_id=");
 
     // Construct the URL with the session_id query and variable ID as parameters
     snprintf(full_url, sizeof(full_url), "%s/get_variable_size?%s&var_id=%d", base_url, session_query, var_id);
@@ -496,7 +517,7 @@ int get_variable_size(const char* base_url, const SessionID session_id, int var_
  * @param n Number of elements in the array.
  * @return Returns 1 on success, 0 on failure, and -1 if CURL initialization fails.
  */
-int send_data(const char* base_url, const SessionID session_id, int var_id, const double* arr, int n) {
+int send_data(const char* base_url, const SessionID* session_id, int var_id, const double* arr, int n) {
     CURL *curl;
     CURLcode res;
     struct curl_slist *headers = NULL;
@@ -515,7 +536,7 @@ int send_data(const char* base_url, const SessionID session_id, int var_id, cons
     }
 
     // Format the session_id array into a string suitable for headers
-    build_session_id_string(sessionHeader, session_id, "Session-ID: ");
+    build_session_id_string(sessionHeader, *session_id, "Session-ID: ");
     snprintf(varHeader, sizeof(varHeader), "Var-ID: %d", var_id);
 
     // Prepare the headers
@@ -556,12 +577,13 @@ int send_data(const char* base_url, const SessionID session_id, int var_id, cons
  * @param n Number of doubles expected to be received.
  * @return 1 on successful reception and correct data size, 0 otherwise.
  */
-int receive_data(const char* base_url, const SessionID session_id, int var_id, double* arr, int n) {
+int receive_data(const char* base_url, const SessionID* session_id, int var_id, double* arr, int n) {
     CURL *curl;
     CURLcode res;
     Memory chunk;
     char full_url[MAX_URL_SIZE];
     char session_query[256];  // Buffer for session_id query part
+    char postFields[1024];  // Buffer for JSON payload
 
     // Initialize the memory structure
     chunk.data = malloc(1);  // Initially allocate 1 byte
@@ -573,16 +595,24 @@ int receive_data(const char* base_url, const SessionID session_id, int var_id, d
     }
 
     // Generate the session_id query from the array
-    build_session_id_string(session_query, session_id, "session_id=");
+    build_session_id_json(session_query, *session_id);
 
-    // Construct the URL with session ID and variable ID
-    snprintf(full_url, sizeof(full_url), "%s/receive_data?%s&var_id=%d", base_url, session_query, var_id);
+    // Construct the JSON payload
+    snprintf(postFields, sizeof(postFields), "{\"session_id\": %s, \"param_id\": %d}", session_query, var_id);
+
+    // Construct the full URL
+    snprintf(full_url, sizeof(full_url), "%s/receive_data", base_url);
 
     curl = curl_easy_init();
     if (curl) {
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+
         curl_easy_setopt(curl, CURLOPT_URL, full_url);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, receive_data_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
         // Perform the HTTP GET request
@@ -620,15 +650,18 @@ int receive_data(const char* base_url, const SessionID session_id, int var_id, d
  * @param session_id Array containing session identifiers.
  * @param user_id User identifier, used to authenticate the request and identify the user within the session context.
  */
-void end_session(const char* base_url, const SessionID session_id, char* user_id) {
+void end_session(const char* base_url, const SessionID* session_id, char* user_id) {
     CURL *curl;
     CURLcode res;
     char full_url[MAX_URL_SIZE];
     char session_id_str[256];
     char postFields[1024];
-    char user_id_str[32];
+    // char user_id_str[32];
+    Memory chunk;
 
-    snprintf(full_url, sizeof(full_url), "%s/end_session", base_url);
+    chunk.data = malloc(1);
+    chunk.size = 0;
+
 
     // strcpy(session_id_str, "");
     // char temp[10];
@@ -637,11 +670,15 @@ void end_session(const char* base_url, const SessionID session_id, char* user_id
     //     strcat(session_id_str, temp);
     //     if (i < 4) strcat(session_id_str, ",");
     // }
-    build_session_id_string(session_id_str, session_id, "");
+    build_session_id_json(postFields, *session_id);
 
 
-    snprintf(user_id_str, sizeof(user_id_str), "%s", user_id);
-    snprintf(postFields, sizeof(postFields), "{\"session_id\": \"%s\", \"user_id\": %s}", session_id_str, user_id_str);
+    // snprintf(user_id_str, sizeof(user_id_str), "%s", user_id);
+    // snprintf(postFields, sizeof(postFields), "{\"session_id\": \"%s\", \"user_id\": %s}", session_id_str, user_id_str);
+    // snprintf(postFields, sizeof(postFields), "", session_id_str);
+    printf("Constructed Payload: %s\n", postFields);  // Debugging print
+    snprintf(full_url, sizeof(full_url), "%s/end_session", base_url);
+
 
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
@@ -650,9 +687,11 @@ void end_session(const char* base_url, const SessionID session_id, char* user_id
         headers = curl_slist_append(headers, "Content-Type: application/json");
 
         curl_easy_setopt(curl, CURLOPT_URL, full_url);
+        // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, build_session_id);
+        // curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields);
-        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
@@ -662,7 +701,6 @@ void end_session(const char* base_url, const SessionID session_id, char* user_id
         }
 
         curl_easy_cleanup(curl);
-        curl_slist_free_all(headers);
     }
     curl_global_cleanup();
 }
